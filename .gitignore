@@ -144,3 +144,8 @@ net/oplus_modules
 
 # Output dir
 out
+
+#
+# Ignoring Android.bp link file
+#
+Android.bp

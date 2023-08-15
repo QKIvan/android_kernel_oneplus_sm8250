@@ -53,7 +53,7 @@ jobs:
     - name: Download kernel source
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        git clone https://github.com/QKIvan/android_kernel_oneplus_sm8250 -b WIP android-kernel --depth=1
+        git clone https://github.com/QKIvan/android_kernel_oneplus_sm8250 -b 13-su android-kernel --depth=1
 
     - name: Setup ccache
       uses: hendrikmuhs/ccache-action@v1.2

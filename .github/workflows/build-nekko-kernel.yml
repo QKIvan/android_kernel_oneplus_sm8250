@@ -9,6 +9,7 @@ jobs:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
+      NEED_DTBO: "true"
       KERNEL_CONFIG: "vendor/kona-perf_defconfig"
       CUSTOM_CMDS: "CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- LLVM=1 LLVM_IAS=1 O=out LD=ld.lld"
       ARCH: "arm64"
@@ -79,6 +80,14 @@ jobs:
            echo "Kernel output file is empty"
            exit 1
        fi
+       if [ ${{ env.NEED_DTBO }} = true ]; then
+           if [ -f android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img ]; then
+               echo "CHECK_DTBO_IS_OK=true" >> $GITHUB_ENV
+           else
+               echo "DTBO image is empty"
+               exit 1
+           fi
+       fi
   
     - name: Make Anykernel3
       if: env.CHECK_FILE_IS_OK == 'true'
@@ -89,6 +98,9 @@ jobs:
         sed -i 's!block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!block=auto;!g' AnyKernel3/anykernel.sh
         sed -i 's/is_slot_device=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
         cp android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }} AnyKernel3/
+        if [ ${{ env.CHECK_DTBO_IS_OK }} = true ]; then
+            cp android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img AnyKernel3/
+        fi
         rm -rf AnyKernel3/.git* AnyKernel3/README.md
 
     - name: Upload AnyKernel3
@@ -97,3 +109,10 @@ jobs:
       with:
         name: AnyKernel3${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
         path: kernel_workspace/AnyKernel3/*
+
+    - name: Upload DTBO image
+      if: env.CHECK_DTBO_IS_OK == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: dtbo-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
+        path: kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img
